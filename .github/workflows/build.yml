@@ -7,6 +7,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -26,8 +29,14 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Setup Android SDK
+      - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK Licenses & Install Platform
+        run: |
+          SDKMANAGER_BIN=$(which sdkmanager || echo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager")
+          yes | "$SDKMANAGER_BIN" --licenses || true
+          "$SDKMANAGER_BIN" "platforms;android-36" "build-tools;36.0.0" || true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -36,17 +45,27 @@ jobs:
 
       - name: Prepare Keystore & Environment
         run: |
+          # Ensure .env exists for secrets plugin
+          touch .env
+          
+          # Restore or generate debug.keystore for signing
           if [ -f debug.keystore.base64 ]; then
             base64 -d debug.keystore.base64 > debug.keystore
           fi
-          touch .env
+          
+          if [ ! -f debug.keystore ]; then
+            keytool -genkeypair -v -keystore debug.keystore \
+              -storepass android -alias androiddebugkey -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
 
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: gradle :app:assembleDebug --no-daemon --no-configuration-cache --stacktrace
 
       - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: samp-mobile-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: samp-mobile-apk
+          path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
