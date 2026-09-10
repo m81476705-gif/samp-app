@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SA-MP Mobile - Data File Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Login Overlay -->
+  <div id="login-overlay" class="overlay">
+    <div class="login-card">
+      <div class="brand-badge">
+        <span class="brand-tag">SA-MP MOBILE</span>
+      </div>
+      <h2>Data Distribution Server</h2>
+      <p class="subtitle">Enter administrative credentials to manage required game data packages</p>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" value="admin" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" value="adminpassword123" required autocomplete="current-password">
+        </div>
+        <div id="login-error" class="error-text hidden"></div>
+        <button type="submit" id="btn-login" class="btn btn-primary btn-block">Sign In</button>
+      </form>
+      <div class="login-hint">
+        Default test credentials: <code>admin</code> / <code>adminpassword123</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Dashboard App -->
+  <div id="dashboard-app" class="dashboard hidden">
+    <!-- Header -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo-mark">⚡</div>
+        <div>
+          <h1 class="topbar-title">SA-MP Data Hub</h1>
+          <span class="topbar-subtitle">Mobile Client Resource & Update Manager</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span>API Online (:3000)</span>
+        </div>
+        <button id="btn-logout" class="btn btn-ghost btn-sm">Logout</button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Top Metrics -->
+      <section class="metrics-grid">
+        <div class="metric-card active-release-card">
+          <div class="metric-header">
+            <span class="metric-label">ACTIVE / LATEST VERSION</span>
+            <span class="badge badge-active" id="metric-active-badge">ACTIVE</span>
+          </div>
+          <div class="metric-value" id="metric-version">v1.0.0</div>
+          <div class="metric-sub" id="metric-filename">samp_mobile_data_v1.0.0.zip</div>
+          <div class="metric-meta">
+            <span id="metric-size">-- MB</span> • 
+            <span class="checksum-preview" id="metric-checksum" title="Click to copy SHA-256">SHA-256: ...</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">TOTAL PACKAGES</span>
+            <span class="icon">📦</span>
+          </div>
+          <div class="metric-value" id="metric-total-releases">0</div>
+          <div class="metric-sub">Uploaded data archives</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">STORAGE CONSUMED</span>
+            <span class="icon">💾</span>
+          </div>
+          <div class="metric-value" id="metric-total-storage">-- MB</div>
+          <div class="metric-sub">On server storage</div>
+        </div>
+      </section>
+
+      <!-- Two Column Layout: Upload Form & Live API Endpoint -->
+      <div class="dashboard-columns">
+        <!-- Upload Form Card -->
+        <section class="card upload-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Upload Game Data Package</h3>
+              <p>Upload a new .zip, .rar, or resource bundle for mobile client synchronization</p>
+            </div>
+          </div>
+
+          <form id="upload-form" class="card-body">
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="upload-version">Version Tag / Number <span class="required">*</span></label>
+                <input type="text" id="upload-version" placeholder="e.g. 1.0.2 or 1.1.0-RC1" required>
+                <span class="input-hint">Checked by mobile client on launch to detect updates</span>
+              </div>
+              <div class="form-group checkbox-group">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="upload-set-active" checked>
+                  <span class="checkbox-box"></span>
+                  <span class="checkbox-text">Set as Active / Latest</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="upload-notes">Changelog / Release Notes</label>
+              <textarea id="upload-notes" rows="2" placeholder="e.g. Updated Los Santos texture pack, optimized sound banks, fixed crash in 0.3.7"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Data File (.zip, .rar, .7z, .dat) <span class="required">*</span></label>
+              <div id="drop-zone" class="drop-zone">
+                <input type="file" id="upload-file" accept=".zip,.rar,.7z,.tar,.gz,.dat,.bin" required>
+                <div class="drop-zone-content">
+                  <div class="drop-icon">📁</div>
+                  <div class="drop-text">
+                    <strong>Choose a data archive</strong> or drag & drop here
+                  </div>
+                  <div class="drop-sub" id="file-chosen-text">Supports .zip, .rar containing game files</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Upload progress -->
+            <div id="upload-progress-container" class="upload-progress-box hidden">
+              <div class="progress-info">
+                <span id="upload-progress-status">Uploading & computing SHA-256...</span>
+                <span id="upload-progress-percent">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div id="upload-progress-fill" class="progress-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div id="upload-alert" class="alert hidden"></div>
+
+            <div class="form-actions">
+              <button type="submit" id="btn-submit-upload" class="btn btn-primary">
+                <span>Upload & Distribute</span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Android Connection & API Endpoint Info -->
+        <section class="card api-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Client API Endpoint</h3>
+              <p>Android app queries this endpoint on launch to verify file integrity</p>
+            </div>
+            <button id="btn-refresh-api" class="btn btn-secondary btn-sm">Refresh JSON</button>
+          </div>
+
+          <div class="card-body">
+            <div class="endpoint-box">
+              <span class="method-badge">GET</span>
+              <code id="api-url-text">/api/data-file/latest</code>
+              <button id="btn-copy-url" class="btn-icon" title="Copy URL">📋</button>
+            </div>
+
+            <div class="code-preview-container">
+              <div class="code-header">
+                <span>Response Output</span>
+                <span class="status-code">200 OK</span>
+              </div>
+              <pre id="api-response-json" class="json-code">Loading...</pre>
+            </div>
+
+            <div class="android-connect-guide">
+              <h4>Android Client Setup</h4>
+              <ul>
+                <li><strong>Android Emulator:</strong> Use <code>http://10.0.2.2:3000</code> in App Settings</li>
+                <li><strong>Local Device (Wi-Fi):</strong> Use your machine LAN IP e.g. <code>http://192.168.1.X:3000</code></li>
+                <li><strong>Verification:</strong> Automatic SHA-256 hash comparison on client download</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Release History Table -->
+      <section class="card history-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Uploaded Data Releases</h3>
+            <p>List of all stored game data packages with active version routing</p>
+          </div>
+          <button id="btn-refresh-releases" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Version</th>
+                <th>File Name</th>
+                <th>Size</th>
+                <th>SHA-256 Checksum</th>
+                <th>Release Notes</th>
+                <th>Uploaded</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="releases-table-body">
+              <tr>
+                <td colspan="8" class="text-center py-4">Loading releases...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

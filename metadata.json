@@ -1,0 +1,7 @@
+{
+  "name": "SA-MP Mobile",
+  "description": "SA-MP Mobile game client with backend data file download manager and admin panel",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
