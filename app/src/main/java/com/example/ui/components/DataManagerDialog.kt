@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
@@ -77,7 +79,19 @@ fun DataManagerDialog(
       )
     },
     text = {
-      Column(modifier = Modifier.fillMaxWidth()) {
+      val scrollState = rememberScrollState()
+      val absPath = gameDataDir.absolutePath
+      val displayPath = if (absPath.contains("Android/data/")) {
+        absPath.substring(absPath.indexOf("Android/data/"))
+      } else {
+        absPath
+      }
+
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .verticalScroll(scrollState)
+      ) {
         // Status overview card
         Column(
           modifier = Modifier
@@ -125,12 +139,19 @@ fun DataManagerDialog(
             )
           }
 
-          Spacer(modifier = Modifier.height(4.dp))
+          Spacer(modifier = Modifier.height(6.dp))
 
           Text(
-            text = "Location: ${gameDataDir.name}/",
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, fontFamily = FontFamily.Monospace),
-            color = MaterialTheme.colorScheme.secondary
+            text = "Storage: $displayPath",
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold),
+            color = SampAmber
+          )
+
+          Spacer(modifier = Modifier.height(2.dp))
+          Text(
+            text = "Files downloaded in-app are unpacked into Android/data.",
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
           )
 
           if (checksum != "None") {

@@ -1,5 +1,6 @@
 package com.example.ui
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -46,6 +47,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -173,57 +175,121 @@ fun LauncherScreen(
       }
 
       // Search & Tabs
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .background(MaterialTheme.colorScheme.surface)
-      ) {
-        // Search bar
-        OutlinedTextField(
-          value = searchQuery,
-          onValueChange = { viewModel.setSearchQuery(it) },
-          placeholder = { Text("Search your servers, gamemodes, IPs...") },
-          leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-          },
-          singleLine = true,
+      val configuration = LocalConfiguration.current
+      val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+      if (isLandscape) {
+        Row(
           modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 8.dp)
-            .testTag("server_search_bar"),
-          colors = TextFieldDefaults.colors(
-            focusedContainerColor = SampSurfaceVariant,
-            unfocusedContainerColor = SampSurfaceVariant,
-            focusedIndicatorColor = SampAmber,
-            unfocusedIndicatorColor = SampBorder
-          ),
-          shape = RoundedCornerShape(8.dp)
-        )
-
-        // Tabs: All Servers, Favorites
-        TabRow(
-          selectedTabIndex = selectedTab,
-          containerColor = MaterialTheme.colorScheme.surface,
-          contentColor = SampAmber,
-          indicator = { tabPositions ->
-            TabRowDefaults.SecondaryIndicator(
-              Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-              color = SampAmber,
-              height = 3.dp
-            )
-          },
-          divider = {}
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 14.dp, vertical = 4.dp),
+          verticalAlignment = Alignment.CenterVertically
         ) {
-          Tab(
-            selected = selectedTab == 0,
-            onClick = { viewModel.setSelectedTab(0) },
-            text = { Text("My Servers (${servers.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+          // Tabs on the left
+          TabRow(
+            selectedTabIndex = selectedTab,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = SampAmber,
+            modifier = Modifier.width(340.dp),
+            indicator = { tabPositions ->
+              TabRowDefaults.SecondaryIndicator(
+                Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                color = SampAmber,
+                height = 3.dp
+              )
+            },
+            divider = {}
+          ) {
+            Tab(
+              selected = selectedTab == 0,
+              onClick = { viewModel.setSelectedTab(0) },
+              text = { Text("My Servers (${servers.size})", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+            )
+            Tab(
+              selected = selectedTab == 1,
+              onClick = { viewModel.setSelectedTab(1) },
+              text = { Text("Favorites (${servers.count { it.isFavorite }})", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+            )
+          }
+
+          Spacer(modifier = Modifier.width(12.dp))
+
+          // Search bar taking the remaining width
+          OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { viewModel.setSearchQuery(it) },
+            placeholder = { Text("Search servers, gamemodes, IPs...") },
+            leadingIcon = {
+              Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            },
+            singleLine = true,
+            modifier = Modifier
+              .weight(1f)
+              .testTag("server_search_bar"),
+            colors = TextFieldDefaults.colors(
+              focusedContainerColor = SampSurfaceVariant,
+              unfocusedContainerColor = SampSurfaceVariant,
+              focusedIndicatorColor = SampAmber,
+              unfocusedIndicatorColor = SampBorder
+            ),
+            shape = RoundedCornerShape(8.dp)
           )
-          Tab(
-            selected = selectedTab == 1,
-            onClick = { viewModel.setSelectedTab(1) },
-            text = { Text("Favorites (${servers.count { it.isFavorite }})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+        }
+      } else {
+        // Portrait Search & Tabs
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+        ) {
+          // Search bar
+          OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { viewModel.setSearchQuery(it) },
+            placeholder = { Text("Search your servers, gamemodes, IPs...") },
+            leadingIcon = {
+              Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            },
+            singleLine = true,
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(horizontal = 14.dp, vertical = 8.dp)
+              .testTag("server_search_bar"),
+            colors = TextFieldDefaults.colors(
+              focusedContainerColor = SampSurfaceVariant,
+              unfocusedContainerColor = SampSurfaceVariant,
+              focusedIndicatorColor = SampAmber,
+              unfocusedIndicatorColor = SampBorder
+            ),
+            shape = RoundedCornerShape(8.dp)
           )
+
+          // Tabs: All Servers, Favorites
+          TabRow(
+            selectedTabIndex = selectedTab,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = SampAmber,
+            indicator = { tabPositions ->
+              TabRowDefaults.SecondaryIndicator(
+                Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                color = SampAmber,
+                height = 3.dp
+              )
+            },
+            divider = {}
+          ) {
+            Tab(
+              selected = selectedTab == 0,
+              onClick = { viewModel.setSelectedTab(0) },
+              text = { Text("My Servers (${servers.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+            )
+            Tab(
+              selected = selectedTab == 1,
+              onClick = { viewModel.setSelectedTab(1) },
+              text = { Text("Favorites (${servers.count { it.isFavorite }})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+            )
+          }
         }
       }
 

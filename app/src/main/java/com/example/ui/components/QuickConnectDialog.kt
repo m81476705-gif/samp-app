@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
@@ -57,7 +59,12 @@ fun QuickConnectDialog(
       )
     },
     text = {
-      Column(modifier = Modifier.fillMaxWidth()) {
+      val scrollState = rememberScrollState()
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .verticalScroll(scrollState)
+      ) {
         Text(
           text = "Enter the server host IP and SA-MP port to join directly:",
           style = MaterialTheme.typography.bodySmall,

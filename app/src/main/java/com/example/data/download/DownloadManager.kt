@@ -52,7 +52,38 @@ class GameDataDownloadManager(
   private val client = ApiClient.okHttpClient
 
   val gameDataDir: File
-    get() = File(context.filesDir, "samp_data").apply { if (!exists()) mkdirs() }
+    get() {
+      // Primary: /storage/emulated/0/Android/data/<package_name>/files
+      val extDir = context.getExternalFilesDir(null)
+      val dir = extDir ?: File(context.filesDir, "files")
+      if (!dir.exists()) {
+        dir.mkdirs()
+      }
+      return dir
+    }
+
+  val displayStoragePath: String
+    get() {
+      val abs = gameDataDir.absolutePath
+      val idx = abs.indexOf("Android/data/")
+      return if (idx != -1) abs.substring(idx) else abs
+    }
+
+  init {
+    try {
+      val dir = gameDataDir
+      val infoMarker = File(dir, "samp_storage_info.txt")
+      if (!infoMarker.exists()) {
+        infoMarker.writeText(
+          "SA-MP Mobile Android/data Storage\n" +
+          "Files downloaded inside the app are automatically saved and extracted here.\n" +
+          "Path: ${dir.absolutePath}\n"
+        )
+      }
+    } catch (e: Exception) {
+      // Ignore
+    }
+  }
 
   val installedArchiveFile: File
     get() = File(gameDataDir, "game_data.zip")
