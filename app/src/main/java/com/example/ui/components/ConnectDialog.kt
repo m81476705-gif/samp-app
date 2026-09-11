@@ -41,6 +41,7 @@ fun ConnectDialog(
   server: SampServer,
   stage: String,
   isConnected: Boolean,
+  onLaunchGameClient: () -> Unit,
   onDisconnect: () -> Unit
 ) {
   AlertDialog(
@@ -128,12 +129,21 @@ fun ConnectDialog(
     },
     confirmButton = {
       if (isConnected) {
-        Button(
-          onClick = onDisconnect,
-          colors = ButtonDefaults.buttonColors(containerColor = SampGreen),
-          shape = RoundedCornerShape(8.dp)
-        ) {
-          Text("In-Game / Done", color = MaterialTheme.colorScheme.surface)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          Button(
+            onClick = onLaunchGameClient,
+            colors = ButtonDefaults.buttonColors(containerColor = SampAmber),
+            shape = RoundedCornerShape(8.dp)
+          ) {
+            Text("Launch Game", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+          }
+          Button(
+            onClick = onDisconnect,
+            colors = ButtonDefaults.buttonColors(containerColor = SampGreen),
+            shape = RoundedCornerShape(8.dp)
+          ) {
+            Text("Done", color = MaterialTheme.colorScheme.surface)
+          }
         }
       }
     },

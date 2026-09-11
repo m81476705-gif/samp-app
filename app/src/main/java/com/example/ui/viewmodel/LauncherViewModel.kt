@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.download.DownloadStatus
 import com.example.data.download.GameDataDownloadManager
+import com.example.data.game.GameClientLauncher
 import com.example.data.model.DataFileResponse
 import com.example.data.model.SampServer
 import com.example.data.storage.DataPreferences
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
 
 class LauncherViewModel(application: Application) : AndroidViewModel(application) {
   val preferences = DataPreferences(application)
@@ -43,6 +45,13 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
   private val _isConnected = MutableStateFlow(false)
   val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+
+  // Game Client State
+  private val _showClientInstallDialog = MutableStateFlow(false)
+  val showClientInstallDialog: StateFlow<Boolean> = _showClientInstallDialog.asStateFlow()
+
+  private val _installedClientPackage = MutableStateFlow<String?>(null)
+  val installedClientPackage: StateFlow<String?> = _installedClientPackage.asStateFlow()
 
   // Tab & Filter states (0 = All Servers, 1 = Favorites)
   private val _selectedTab = MutableStateFlow(0)
@@ -283,6 +292,51 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
   fun verifyInstalledIntegrity() {
     val result = downloadManager.verifyInstalledFileIntegrity()
     _integrityResult.value = result
+  }
+
+  fun launchDirectGame(server: SampServer) {
+    val context = getApplication<Application>()
+    val detectedPackage = GameClientLauncher.findInstalledClientPackage(context)
+    if (detectedPackage != null) {
+      _installedClientPackage.value = detectedPackage
+      GameClientLauncher.launchGame(
+        context = context,
+        packageName = detectedPackage,
+        serverIp = server.ip,
+        serverPort = server.port,
+        playerName = preferences.playerName
+      )
+    } else {
+      // Prompt user to install Client APK
+      _showClientInstallDialog.value = true
+    }
+  }
+
+  fun openClientInstall(show: Boolean) {
+    _showClientInstallDialog.value = show
+    if (show) {
+      val context = getApplication<Application>()
+      _installedClientPackage.value = GameClientLauncher.findInstalledClientPackage(context)
+    }
+  }
+
+  fun installClientApk() {
+    val context = getApplication<Application>()
+    // 1. Look for downloaded APK in game data directory
+    val clientApkFile = File(downloadManager.gameDataDir, "samp_client.apk")
+    if (clientApkFile.exists() && clientApkFile.length() > 0) {
+      GameClientLauncher.installApk(context, clientApkFile)
+    } else {
+      // 2. If not pre-downloaded, extract or open browser to client repository
+      val apkUri = android.net.Uri.parse("https://github.com/skylot/jadx/releases")
+      try {
+        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/unisamp/client/releases"))
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+      } catch (e: Exception) {
+        // Fallback
+      }
+    }
   }
 
   fun resetDataForTesting() {
